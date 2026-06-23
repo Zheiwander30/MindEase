@@ -1,8 +1,8 @@
 {
-  "name": "mindspace-student-wellness",
+  "name": "mindease-student-wellness",
   "private": true,
   "version": "0.1.0",
-  "description": "Student wellness app aligned with SDG 3 — mood tracking, mindfulness, and support resources.",
+  "description": "Student wellness browser-based app for mood tracking, mindfulness, and support resources.",
   "type": "module",
   "scripts": {
     "dev": "vite",
