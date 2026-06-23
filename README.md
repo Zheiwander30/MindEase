@@ -1,6 +1,6 @@
-# MindSpace — Student Wellness App (Alpha)
+# MindEase — Student Wellness App (Alpha)
 
-A zero-backend student wellness app aligned with **SDG 3 (Good Health and
+A student wellness app aligned with **SDG 3 (Good Health and
 Well-being)**: mood tracking, mindfulness time, tasks, and a curated
 resources/helpline directory.
 
