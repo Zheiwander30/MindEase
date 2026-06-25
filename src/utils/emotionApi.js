@@ -1,96 +1,145 @@
 /**
- * AI Emotion Integration — PLACEHOLDER ARCHITECTURE ONLY.
+ * AI Emotion Detection — face-api.js (100% on-device, no API key needed)
  *
- * This module defines the *shape* of the face-emotion pipeline so the UI
- * (see components/EmotionCameraCapture.jsx) can be built and tested today
- * against a mock, then pointed at a real provider later by implementing
- * `callEmotionApi()` — nothing else in the app needs to change.
+ * face-api.js runs TensorFlow.js models entirely in the browser.
+ * No data ever leaves the device. No API key. No cost. Works offline.
  *
- * Intended real-world flow (NOT yet active):
- *   1. Request camera access (getUserMedia) — see EmotionCameraCapture.jsx.
- *   2. Draw the current video frame to an off-screen <canvas>.
- *   3. canvas.toBlob() / toDataURL() to get an image payload.
- *   4. POST the image to a cloud face-emotion provider
- *      (e.g. Azure Face API, Hume AI, AWS Rekognition).
- *   5. Map the provider's emotion vector to this app's 5-point mood scale
- *      (Great / Good / Okay / Stressed / Overwhelmed).
+ * SETUP (one-time):
+ *   1. Run: npm install face-api.js
+ *   2. Download the model weights into /public/models/ by running the
+ *      download script: node scripts/download-models.js
+ *      (or manually from https://github.com/justadudewhohacks/face-api.js/tree/master/weights)
  *
- * For the alpha build, callEmotionApi() returns a MOCK response so the
- * camera capture UI is fully testable with zero external dependencies
- * and zero API keys.
+ *      Required files in /public/models/:
+ *        tiny_face_detector_model-weights_manifest.json
+ *        tiny_face_detector_model-shard1
+ *        face_expression_model-weights_manifest.json
+ *        face_expression_model-shard1
+ *
+ * HOW IT WORKS:
+ *   captureFrameFromVideo() grabs a single JPEG frame from the live <video>.
+ *   detectEmotionFromVideo() runs TinyFaceDetector + FaceExpressionNet on the
+ *   frame directly (no upload), and returns the dominant expression mapped to
+ *   the app's 5-point mood scale.
+ *
+ * PRIVACY: Everything runs locally. Zero network requests. Zero data sent anywhere.
  */
 
-export const MOOD_SCALE = ['great', 'good', 'okay', 'stressed', 'overwhelmed'];
+// face-api.js expression labels → app mood scale
+const EXPRESSION_TO_MOOD = {
+  happy:     'great',
+  neutral:   'okay',
+  surprised: 'good',
+  sad:       'stressed',
+  fearful:   'stressed',
+  disgusted: 'overwhelmed',
+  angry:     'overwhelmed',
+};
+
+const MOOD_REASONING = {
+  happy:     'You appear to be smiling — that is a great sign!',
+  neutral:   'Your expression looks calm and composed.',
+  surprised: 'You look alert and engaged.',
+  sad:       'You seem a little down. That is okay.',
+  fearful:   'You look a bit anxious or worried.',
+  disgusted: 'You seem uncomfortable or frustrated.',
+  angry:     'There is some tension in your expression.',
+};
+
+let _faceapi = null;
+let _modelsLoaded = false;
 
 /**
- * Maps a raw provider emotion vector (e.g. { happiness, sadness, anger,
- * fear, surprise, neutral }) to this app's 5-point mood scale.
- * Replace the heuristic below with real provider-specific logic when a
- * provider is connected.
+ * Lazy-loads face-api.js and the required model weights.
+ * Models are served from /public/models/ (local, no network needed after setup).
  */
-export function mapEmotionVectorToMood(vector) {
-  const { happiness = 0, sadness = 0, anger = 0, fear = 0, neutral = 0 } = vector || {};
+async function loadModels() {
+  if (_modelsLoaded) return _faceapi;
 
-  if (happiness > 0.6) return 'great';
-  if (happiness > 0.35 || neutral > 0.5) return 'good';
-  if (sadness > 0.4 || fear > 0.4) return 'stressed';
-  if (anger > 0.4 || (sadness > 0.3 && fear > 0.3)) return 'overwhelmed';
-  return 'okay';
+  // Dynamic import so face-api.js isn't bundled unless the camera feature is used
+  _faceapi = await import('face-api.js');
+
+  const MODEL_URL = '/models';
+  await Promise.all([
+    _faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    _faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+  ]);
+
+  _modelsLoaded = true;
+  return _faceapi;
 }
 
 /**
- * Sends a captured frame (base64 JPEG/PNG data URL) to the configured
- * cloud emotion-recognition endpoint.
+ * Runs emotion detection on a live <video> element.
+ * Returns { mood, expression, reasoning, mocked: false } or falls back to mock.
  *
- * Swap the body of this function for a real fetch() call once a provider
- * and API key/proxy are ready, e.g.:
- *
- *   const response = await fetch(import.meta.env.VITE_EMOTION_API_URL, {
- *     method: 'POST',
- *     headers: { 'Content-Type': 'application/json' },
- *     body: JSON.stringify({ image: frameDataUrl }),
- *   });
- *   const data = await response.json();
- *   return { vector: data.faceAttributes.emotion, mood: mapEmotionVectorToMood(data.faceAttributes.emotion) };
- *
- * @param {string} frameDataUrl - base64 data URL of the captured frame.
- * @returns {Promise<{ vector: object, mood: string, mocked: boolean }>}
+ * @param {HTMLVideoElement} videoEl
+ * @returns {Promise<{ mood: string, expression: string, reasoning: string, mocked: boolean }>}
  */
-export async function callEmotionApi(frameDataUrl) {
-  // --- MOCK IMPLEMENTATION (active for the alpha build) ---------------
-  // Simulates network latency and returns a plausible random emotion
-  // vector so the capture UI / state wiring can be fully tested without
-  // a live backend or API key.
-  await new Promise((resolve) => setTimeout(resolve, 900));
+export async function detectEmotionFromVideo(videoEl) {
+  try {
+    const faceapi = await loadModels();
 
-  const mockVector = {
-    happiness: Math.random(),
-    sadness: Math.random() * 0.5,
-    anger: Math.random() * 0.3,
-    fear: Math.random() * 0.3,
-    neutral: Math.random() * 0.6,
-  };
+    const detection = await faceapi
+      .detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions())
+      .withFaceExpressions();
 
+    if (!detection) {
+      return { mood: null, expression: null, reasoning: 'No face detected. Make sure your face is visible and well-lit.', mocked: false, noFace: true };
+    }
+
+    // Find the dominant expression
+    const expressions = detection.expressions;
+    const dominant = Object.entries(expressions).reduce(
+      (best, [expr, score]) => (score > best[1] ? [expr, score] : best),
+      ['neutral', 0]
+    );
+
+    const expression = dominant[0];
+    const mood = EXPRESSION_TO_MOOD[expression] ?? 'okay';
+    const reasoning = MOOD_REASONING[expression] ?? 'Expression detected.';
+
+    return { mood, expression, reasoning, confidence: dominant[1], mocked: false };
+
+  } catch (err) {
+    // Models not downloaded yet or other setup issue → fall back to mock
+    console.warn('[EmotionAPI] face-api.js error, using mock:', err.message);
+    return _mockResponse(err.message.includes('404') || err.message.includes('load'));
+  }
+}
+
+/**
+ * Legacy function kept for compatibility — just runs detectEmotionFromVideo
+ * on the video element instead of a captured frame.
+ */
+export async function callEmotionApi(videoEl) {
+  return detectEmotionFromVideo(videoEl);
+}
+
+function _mockResponse(modelsNotDownloaded = false) {
+  const expressions = ['happy', 'neutral', 'surprised', 'sad'];
+  const expression = expressions[Math.floor(Math.random() * expressions.length)];
   return {
-    vector: mockVector,
-    mood: mapEmotionVectorToMood(mockVector),
+    mood: EXPRESSION_TO_MOOD[expression],
+    expression,
+    reasoning: modelsNotDownloaded
+      ? 'Models not found — run the download script to enable live detection. Showing demo result.'
+      : MOOD_REASONING[expression],
     mocked: true,
-    frameReceived: Boolean(frameDataUrl),
+    modelsNotDownloaded,
   };
-  // ----------------------------------------------------------------------
 }
 
 /**
- * Captures a single still frame from a live <video> element and returns
- * it as a base64 data URL, using an off-screen canvas. Ready to use once
- * camera capture is wired into a screen.
+ * Captures a still frame from a <video> for display purposes only.
+ * Detection itself runs on the live video element, not a canvas.
  */
 export function captureFrameFromVideo(videoEl) {
   if (!videoEl || !videoEl.videoWidth) return null;
+  const scale = Math.min(1, 640 / videoEl.videoWidth);
   const canvas = document.createElement('canvas');
-  canvas.width = videoEl.videoWidth;
-  canvas.height = videoEl.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.85);
+  canvas.width  = Math.round(videoEl.videoWidth  * scale);
+  canvas.height = Math.round(videoEl.videoHeight * scale);
+  canvas.getContext('2d').drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.80);
 }

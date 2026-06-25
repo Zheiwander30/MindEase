@@ -2,124 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---------------------------------------------------------------- */
-/* Theme tokens                                                     */
-/* Variables are stored as space-separated "R G B" triplets (not     */
-/* hex) so Tailwind's rgb(var(--x) / <alpha-value>) pattern in       */
-/* tailwind.config.js can apply opacity modifiers like bg-brand/20.  */
-/* Components only ever reference the semantic Tailwind colors       */
-/* (app-bg, app-card, brand, mood-*), never raw hex values, so       */
-/* switching data-theme on <html> re-themes the whole app instantly. */
-/* ---------------------------------------------------------------- */
+/* ── Palette (RGB triplets — used by Tailwind via rgb(var(--x))) ── */
 
+/* Light / Day */
 :root,
-[data-theme='light'] {
-  --bg: 244 242 250;
-  --surface: 237 234 248;
-  --card: 255 255 255;
-  --border: 230 225 245;
-  --text: 31 27 46;
-  --text-muted: 107 114 128;
-  --primary: 124 111 232;
-  --primary-light: 237 234 251;
-  --primary-dark: 95 80 214;
-  --mood-great: 78 203 141;
-  --mood-good: 166 216 107;
-  --mood-okay: 244 200 74;
-  --mood-stressed: 240 160 75;
-  --mood-overwhelmed: 242 115 122;
+[data-theme="light"],
+[data-theme="day"] {
+  --primary:          120 80 220;
+  --primary-light:    235 228 255;
+  --primary-dark:     90  50  180;
+  --bg:               248 247 255;
+  --surface:          255 255 255;
+  --card:             255 255 255;
+  --text:             26  22  40;
+  --muted:            130 120 155;
+  --border:           225 220 240;
+  --mood-great:       72  199 142;
+  --mood-good:        90  173 255;
+  --mood-okay:        255 193 7;
+  --mood-stressed:    255 140 60;
+  --mood-overwhelmed: 255 80  80;
 }
 
-/* Day: brighter, higher-contrast variant used automatically 6am-6pm */
-[data-theme='day'] {
-  --bg: 251 250 255;
-  --surface: 241 238 251;
-  --card: 255 255 255;
-  --border: 236 232 248;
-  --text: 31 27 46;
-  --text-muted: 107 114 128;
-  --primary: 124 111 232;
-  --primary-light: 237 234 251;
-  --primary-dark: 95 80 214;
-  --mood-great: 78 203 141;
-  --mood-good: 166 216 107;
-  --mood-okay: 244 200 74;
-  --mood-stressed: 240 160 75;
-  --mood-overwhelmed: 242 115 122;
+/* Dark / Night */
+[data-theme="dark"],
+[data-theme="night"] {
+  --primary:          150 110 255;
+  --primary-light:    45  35  80;
+  --primary-dark:     120 80  220;
+  --bg:               14  12  24;
+  --surface:          22  18  38;
+  --card:             30  25  50;
+  --text:             235 230 255;
+  --muted:            150 138 185;
+  --border:           48  40  75;
+  --mood-great:       72  199 142;
+  --mood-good:        90  173 255;
+  --mood-okay:        255 193 7;
+  --mood-stressed:    255 140 60;
+  --mood-overwhelmed: 255 80  80;
 }
 
-/* Night: soothing dimmed indigo, applied automatically after 6pm */
-[data-theme='night'] {
-  --bg: 27 24 48;
-  --surface: 35 32 65;
-  --card: 38 34 71;
-  --border: 52 47 88;
-  --text: 236 233 249;
-  --text-muted: 166 160 196;
-  --primary: 156 143 245;
-  --primary-light: 52 47 88;
-  --primary-dark: 194 184 250;
-  --mood-great: 78 203 141;
-  --mood-good: 166 216 107;
-  --mood-okay: 244 200 74;
-  --mood-stressed: 240 160 75;
-  --mood-overwhelmed: 242 115 122;
-}
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
 
-/* Dark: full dark mode, manually selected */
-[data-theme='dark'] {
-  --bg: 18 17 24;
-  --surface: 26 25 34;
-  --card: 30 29 40;
-  --border: 44 42 56;
-  --text: 242 240 248;
-  --text-muted: 156 153 172;
-  --primary: 156 143 245;
-  --primary-light: 44 42 69;
-  --primary-dark: 194 184 250;
-  --mood-great: 69 181 126;
-  --mood-good: 151 201 95;
-  --mood-okay: 224 183 62;
-  --mood-stressed: 221 146 66;
-  --mood-overwhelmed: 221 103 112;
-}
-
-html, body, #root {
-  height: 100%;
+html {
+  font-size: clamp(14px, 1.5vw + 10px, 16px);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: rgb(var(--bg));
   color: rgb(var(--text));
-  -webkit-tap-highlight-color: transparent;
-  transition: background-color 200ms ease, color 200ms ease;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-* {
-  scrollbar-width: thin;
-}
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 4px; }
 
-/* Respect reduced-motion preferences app-wide */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-}
+/* ── Mobile UX ── */
+* { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
 
-/* Visible keyboard focus ring everywhere, using brand color */
-:focus-visible {
-  outline: 2px solid rgb(var(--primary));
-  outline-offset: 2px;
-  border-radius: 0.5rem;
-}
-
-/* Simple fade-in for onboarding steps */
+/* ── Animations ── */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.animate-fade-in {
-  animation: fade-in 0.3s ease both;
-}
+.animate-fade-in { animation: fade-in 0.25s ease both; }

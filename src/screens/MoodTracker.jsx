@@ -20,16 +20,11 @@ export default function MoodTracker({ onBack, onSaved }) {
 
   useEffect(() => {
     const existing = getTodayMoodLog();
-    if (existing) {
-      setMood(existing.mood);
-      setNote(existing.note || '');
-      setFactors(existing.factors || []);
-    }
+    if (existing) { setMood(existing.mood); setNote(existing.note || ''); setFactors(existing.factors || []); }
   }, []);
 
-  const toggleFactor = (id) => {
-    setFactors((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]));
-  };
+  const toggleFactor = (id) =>
+    setFactors((prev) => prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]);
 
   const handleSave = () => {
     if (!mood) return;
@@ -42,7 +37,8 @@ export default function MoodTracker({ onBack, onSaved }) {
   const handleDetectedMood = (moodId) => {
     setMood(moodId);
     setShowCamera(false);
-    setScanNotice(`AI scan suggested "${detectedMoodLabel(moodId)}" — adjust if that's not quite right.`);
+    setScanNotice(`AI scan suggested "${detectedMoodLabel(moodId)}" — adjust if needed.`);
+    setTimeout(() => setScanNotice(''), 5000);
   };
 
   return (
@@ -58,21 +54,19 @@ export default function MoodTracker({ onBack, onSaved }) {
         <MoodEmojiPicker selected={mood} onSelect={setMood} />
       </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          setScanNotice('');
-          setShowCamera(true);
-        }}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-app-border py-2.5 text-xs font-semibold text-brand"
-      >
+      {/* AI scan button */}
+      <button type="button" onClick={() => { setScanNotice(''); setShowCamera(true); }}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-brand/40 bg-brand/5 py-2.5 text-xs font-semibold text-brand active:bg-brand/10">
         <Camera size={15} />
         Try AI mood scan (beta)
       </button>
-      {scanNotice && <p className="mt-2 text-center text-[11px] text-app-muted">{scanNotice}</p>}
+      {scanNotice && (
+        <p className="mt-2 rounded-xl bg-brand/10 px-3 py-2 text-center text-xs text-brand">{scanNotice}</p>
+      )}
 
+      {/* Note */}
       <Card className="mt-5">
-        <p className="mb-2 text-sm font-bold text-app-text">Add a note (optional)</p>
+        <p className="mb-2 text-sm font-bold text-app-text">Add a note <span className="font-normal text-app-muted">(optional)</span></p>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value.slice(0, NOTE_LIMIT))}
@@ -80,29 +74,20 @@ export default function MoodTracker({ onBack, onSaved }) {
           rows={4}
           className="w-full resize-none rounded-xl border border-app-border bg-app-surface p-3 text-sm text-app-text placeholder:text-app-muted focus:border-brand focus:outline-none"
         />
-        <p className="mt-1 text-right text-xs text-app-muted">
-          {note.length}/{NOTE_LIMIT}
-        </p>
+        <p className="mt-1 text-right text-xs text-app-muted">{note.length}/{NOTE_LIMIT}</p>
       </Card>
 
+      {/* Factors */}
       <Card className="mt-4">
-        <p className="mb-3 text-sm font-bold text-app-text">What's contributing to your mood?</p>
+        <p className="mb-3 text-sm font-bold text-app-text">What is contributing to your mood?</p>
         <div className="flex flex-wrap gap-2">
           {MOOD_FACTORS.map((factor) => {
             const Icon = ICONS[factor.icon];
             const isActive = factors.includes(factor.id);
             return (
-              <button
-                key={factor.id}
-                type="button"
-                onClick={() => toggleFactor(factor.id)}
-                aria-pressed={isActive}
+              <button key={factor.id} type="button" onClick={() => toggleFactor(factor.id)} aria-pressed={isActive}
                 className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors ${
-                  isActive
-                    ? 'border-brand bg-brand text-white'
-                    : 'border-app-border bg-app-surface text-app-text'
-                }`}
-              >
+                  isActive ? 'border-brand bg-brand text-white' : 'border-app-border bg-app-surface text-app-text'}`}>
                 <Icon size={14} />
                 {factor.label}
               </button>
@@ -111,24 +96,18 @@ export default function MoodTracker({ onBack, onSaved }) {
         </div>
       </Card>
 
-      <button
-        type="button"
-        onClick={handleSave}
-        disabled={!mood}
-        className="fixed bottom-20 left-1/2 z-20 w-[calc(100%-2.5rem)] max-w-[calc(28rem-2.5rem)] -translate-x-1/2 rounded-2xl bg-brand py-3.5 text-sm font-bold text-white shadow-soft transition-opacity disabled:opacity-50"
-      >
+      {/* Save button — sticky above bottom nav */}
+      <button type="button" onClick={handleSave} disabled={!mood}
+        className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+4.5rem)] left-1/2 z-20
+                   w-[calc(100%-2.5rem)] max-w-[calc(28rem-2.5rem)] -translate-x-1/2
+                   rounded-2xl bg-brand py-3.5 text-sm font-bold text-white shadow-soft
+                   transition-opacity disabled:opacity-40">
         {saved ? (
-          <span className="flex items-center justify-center gap-2">
-            <Check size={16} /> Saved!
-          </span>
-        ) : (
-          'Save Mood'
-        )}
+          <span className="flex items-center justify-center gap-2"><Check size={16} /> Saved!</span>
+        ) : 'Save Mood'}
       </button>
 
-      {showCamera && (
-        <EmotionCameraCapture onDetected={handleDetectedMood} onClose={() => setShowCamera(false)} />
-      )}
+      {showCamera && <EmotionCameraCapture onDetected={handleDetectedMood} onClose={() => setShowCamera(false)} />}
     </div>
   );
 }

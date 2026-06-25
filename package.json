@@ -1,19 +1,21 @@
 {
-  "name": "mindease-student-wellness",
+  "name": "mindspace-student-wellness",
   "private": true,
   "version": "0.1.0",
-  "description": "Student wellness browser-based app for mood tracking, mindfulness, and support resources.",
+  "description": "Student wellness app aligned with SDG 3 \u2014 mood tracking, mindfulness, and support resources.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:models": "node scripts/download-models.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.1",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "face-api.js": "^0.22.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
