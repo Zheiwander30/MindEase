@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "setup:models": "node scripts/download-models.js"
+    "setup:models": "node scripts/download-models.js",
+    "setup": "npm install && node scripts/download-models.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.1",

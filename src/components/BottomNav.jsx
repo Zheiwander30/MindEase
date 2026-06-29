@@ -1,10 +1,11 @@
-import { Home, Smile, ClipboardList, BookOpen, User, BookHeart } from 'lucide-react';
+import { Home, Smile, ClipboardList, BookOpen, User, BookHeart, MessageCircle } from 'lucide-react';
 
 const TABS = [
   { id: 'home',      label: 'Home',      icon: Home },
   { id: 'mood',      label: 'Mood',      icon: Smile },
   { id: 'tasks',     label: 'Tasks',     icon: ClipboardList },
   { id: 'journal',   label: 'Journal',   icon: BookHeart },
+  { id: 'chat',      label: 'Chat',      icon: MessageCircle },
   { id: 'resources', label: 'Resources', icon: BookOpen },
   { id: 'profile',   label: 'Profile',   icon: User },
 ];
@@ -17,7 +18,7 @@ export default function BottomNav({ active, onChange }) {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       aria-label="Primary navigation"
     >
-      <ul className="grid grid-cols-6">
+      <ul className="grid grid-cols-7">
         {TABS.map(({ id, label, icon: Icon }) => {
           const isActive = active === id;
           return (
@@ -28,7 +29,7 @@ export default function BottomNav({ active, onChange }) {
                 aria-current={isActive ? 'page' : undefined}
                 className="flex w-full flex-col items-center gap-0.5 py-2.5 transition-colors"
               >
-                <Icon size={20} strokeWidth={isActive ? 2.4 : 1.8}
+                <Icon size={19} strokeWidth={isActive ? 2.4 : 1.8}
                   className={isActive ? 'text-brand' : 'text-app-muted'} />
                 <span className={`text-[9px] font-medium leading-none ${isActive ? 'text-brand' : 'text-app-muted'}`}>
                   {label}

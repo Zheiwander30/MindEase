@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import BottomNav from './components/BottomNav';
 import Home from './screens/Home';
 import MoodTracker from './screens/MoodTracker';
@@ -6,6 +6,7 @@ import Tasks from './screens/Tasks';
 import Resources from './screens/Resources';
 import Profile from './screens/Profile';
 import Journal from './screens/Journal';
+import Chat from './screens/Chat';
 import Onboarding from './screens/Onboarding';
 import { useTheme } from './hooks/useTheme';
 import { isOnboarded, getProfile } from './utils/storage';
@@ -30,33 +31,17 @@ export default function App() {
     bumpRefresh();
   }, [bumpRefresh]);
 
-  if (!onboarded) {
-    return <Onboarding onComplete={handleOnboardComplete} />;
-  }
+  if (!onboarded) return <Onboarding onComplete={handleOnboardComplete} />;
 
   let screen;
   switch (activeTab) {
-    case 'mood':
-      screen = <MoodTracker onBack={goHome} onSaved={bumpRefresh} />;
-      break;
-    case 'tasks':
-      screen = <Tasks onBack={goHome} onChanged={bumpRefresh} />;
-      break;
-    case 'resources':
-      screen = <Resources onBack={goHome} />;
-      break;
-    case 'journal':
-      screen = <Journal onBack={goHome} />;
-      break;
+    case 'mood':      screen = <MoodTracker onBack={goHome} onSaved={bumpRefresh} />; break;
+    case 'tasks':     screen = <Tasks onBack={goHome} onChanged={bumpRefresh} />; break;
+    case 'resources': screen = <Resources onBack={goHome} />; break;
+    case 'journal':   screen = <Journal onBack={goHome} />; break;
+    case 'chat':      screen = <Chat onBack={goHome} />; break;
     case 'profile':
-      screen = (
-        <Profile
-          onBack={goHome}
-          profile={profile}
-          themeState={themeState}
-          onChanged={handleProfileChanged}
-        />
-      );
+      screen = <Profile onBack={goHome} profile={profile} themeState={themeState} onChanged={handleProfileChanged} />;
       break;
     default:
       screen = (
@@ -71,9 +56,12 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-app-surface sm:py-6">
-      <div className="relative mx-auto min-h-screen w-full max-w-md bg-app-bg shadow-soft sm:min-h-[calc(100vh-3rem)] sm:rounded-[2rem] sm:overflow-hidden">
-        {screen}
+    <div className="min-h-screen bg-app-surface sm:bg-app-bg sm:py-6 sm:px-4">
+      <div className="relative mx-auto min-h-screen w-full max-w-md bg-app-bg
+                      sm:min-h-[calc(100dvh-3rem)] sm:rounded-[2rem] sm:overflow-hidden sm:shadow-soft">
+        <div className="h-full overflow-y-auto overscroll-contain">
+          {screen}
+        </div>
         <BottomNav active={activeTab} onChange={setActiveTab} />
       </div>
     </div>
