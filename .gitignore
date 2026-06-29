@@ -1,0 +1,9 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+-e 
+# face-api.js model weights (run: node scripts/download-models.js)
+public/models/*.json
+public/models/*-shard*
